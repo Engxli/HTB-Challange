@@ -1,4 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body>
 <script>
-  // Just send a simple GET request to confirm the bot visits
-  new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?test=bot_visited&time=' + Date.now();
+  // SUPER SIMPLE - just send one request
+  console.log('Test page loaded by bot');
+  
+  // Method 1: Image tag (most reliable)
+  new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?test=success&time=' + Date.now();
+  
+  // Method 2: Backup fetch (in case image doesn't work)
+  setTimeout(function() {
+    fetch('https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?backup=true', {
+      mode: 'no-cors'
+    });
+  }, 1000);
 </script>
+</body>
+</html>
